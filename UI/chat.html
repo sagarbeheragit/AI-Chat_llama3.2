@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chatbot UI</title>
+  <style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #f0f2f5;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    /* Modern header with AI logo */
+    .header {
+      text-align: center;
+      padding: 15px;
+      background: linear-gradient(135deg, #2b3595 0%, #4b59c5 100%);
+      border-radius: 12px 12px 0 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    .ai-logo {
+      width: 32px;
+      height: 32px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .header-title {
+      color: white;
+      font-size: 20px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    #chatbox {
+      width: 90%;
+      max-width: 1000px;
+      height: 85vh;
+      border-radius: 12px;
+      background: white;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    #messages {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      background-color: #ffffff;
+    }
+
+    .message {
+      margin: 8px 0;
+      padding: 12px 16px;
+      border-radius: 12px;
+      max-width: 85%;
+      line-height: 1.5;
+      font-size: 15px;
+      animation: fadeIn 0.3s ease;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .user {
+      margin-left: auto;
+      background-color: #2b3595;
+      color: white;
+      border-radius: 12px 12px 0 12px;
+    }
+
+    .bot {
+      background-color: #f0f2f5;
+      color: #1a1a1a;
+      border-radius: 12px 12px 12px 0;
+    }
+
+    /* Code block styling */
+    .message code {
+      background-color: #d23a3a;
+      color: #c22c2c;
+      padding: 12px 16px;
+      border-radius: 8px;
+      display: block;
+      overflow-x: auto;
+      margin: 8px 0;
+      font-family: 'Fira Code', 'Consolas', monospace;
+      font-size: 14px;
+    }
+
+    .message code.inline {
+      display: inline;
+      padding: 2px 6px;
+      margin: 0 2px;
+      background-color: rgba(30, 30, 30, 0.1);
+      color: #1a1a1a;
+      border-radius: 4px;
+    }
+
+    #input-area {
+      display: flex;
+      gap: 10px;
+      padding: 20px;
+      background-color: #ffffff;
+      border-top: 1px solid #eaeaea;
+    }
+
+    #user-input {
+      flex: 1;
+      padding: 12px 16px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      outline: none;
+      font-size: 15px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    #user-input:focus {
+      border-color: #2b3595;
+      box-shadow: 0 0 0 2px rgba(43, 53, 149, 0.1);
+    }
+
+    button {
+      padding: 12px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    #send-btn {
+      background-color: #2b3595;
+      color: white;
+    }
+
+    #send-btn:hover {
+      background-color: #4b59c5;
+    }
+
+    #stop-btn {
+      background-color: #dc3545;
+      color: white;
+      display: none;
+    }
+
+    #stop-btn:hover {
+      background-color: #c82333;
+    }
+
+    /* Thinking animation */
+    .thinking {
+      color: #666;
+      font-style: italic;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .thinking::after {
+      content: '...';
+      animation: thinking 1.5s infinite;
+      width: 20px;
+      text-align: left;
+    }
+
+    @keyframes thinking {
+      0% { content: '.'; }
+      33% { content: '..'; }
+      66% { content: '...'; }
+    }
+
+    /* Bullet point and list styling */
+    .message ul, 
+    .message ol {
+      margin: 10px 0;
+      padding-left: 25px;
+      width: 100%;
+    }
+
+    .message li {
+      margin: 5px 0;
+      padding-left: 5px;
+      line-height: 1.5;
+      display: list-item;
+    }
+
+    /* Handle nested lists */
+    .message ul ul,
+    .message ol ul {
+      margin: 5px 0;
+    }
+
+    /* Style for bullet points */
+    .bot ul {
+      list-style-type: disc;
+    }
+
+    .bot ul ul {
+      list-style-type: circle;
+    }
+
+    /* Ensure proper text wrapping in list items */
+    .bot li {
+      overflow-wrap: break-word;
+      word-wrap: break-word;
+      word-break: break-word;
+      min-width: 0;
+    }
+
+    /* Add spacing between list items and other elements */
+    .bot ul + p,
+    .bot ol + p {
+      margin-top: 15px;
+    }
+
+    /* Table styling */
+    .message table {
+        border-collapse: collapse;
+        width: 100%;
+        margin: 10px 0;
+        background-color: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .message th {
+        background-color: #f5f5f5;
+        color: #333;
+        font-weight: 600;
+        padding: 12px;
+        text-align: left;
+        border: 1px solid #e0e0e0;
+    }
+
+    .message td {
+        padding: 10px 12px;
+        border: 1px solid #e0e0e0;
+        line-height: 1.4;
+    }
+
+    .message tr:nth-child(even) {
+        background-color: #f9f9f9;
+    }
+
+    /* Make tables scrollable on mobile */
+    .message .table-container {
+        width: 100%;
+        overflow-x: auto;
+        margin: 10px 0;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Monospace code styling */
+    .message code {
+        font-family: 'Fira Code', 'Consolas', monospace;
+        background-color: #f6f8fa;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 14px;
+        color: #24292e;
+    }
+
+    .message pre {
+        background-color: #f6f8fa;
+        padding: 16px;
+        border-radius: 6px;
+        overflow-x: auto;
+        margin: 10px 0;
+    }
+
+    .message pre code {
+        padding: 0;
+        background-color: transparent;
+        border-radius: 0;
+        display: block;
+        line-height: 1.5;
+    }
+
+    /* Ensure tables in bot messages have consistent styling */
+    .bot table {
+        font-size: 14px;
+    }
+  </style>
+  <!-- Add marked library -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <!-- Add highlight.js for code syntax highlighting (optional) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/default.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+</head>
+<body>
+  <div id="chatbox">
+    <div class="header">
+      <div class="ai-logo">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
+        </svg>
+      </div>
+      <span class="header-title">AI Assistant</span>
+    </div>
+    
+    <div id="messages"></div>
+    <div id="input-area">
+      <input type="text" id="user-input" placeholder="Type your message..." />
+      <button id="send-btn">Send</button>
+      <button id="stop-btn">Stop</button>
+    </div>
+  </div>
+
+  <script>
+    const messagesContainer = document.getElementById('messages');
+    const userInput = document.getElementById('user-input');
+    const sendButton = document.getElementById('send-btn');
+    const stopButton = document.getElementById('stop-btn');
+    let currentController = null;
+
+    // Function to add a message to the chat
+    function addMessage(sender, message) {
+      const messageElement = document.createElement('div');
+      messageElement.classList.add('message', sender);
+      messageElement.textContent = message;
+      messagesContainer.appendChild(messageElement);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    // Function to send user input to the backend and get the bot's response
+    async function sendMessageToBot(userMessage) {
+      try {
+        currentController = new AbortController();
+        stopButton.style.display = 'block';
+        sendButton.disabled = true;
+
+        const response = await fetch('http://localhost:3000/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: userMessage }),
+          signal: currentController.signal
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to communicate with the server.');
+        }
+
+        const messageElement = document.createElement('div');
+        messageElement.classList.add('message', 'bot');
+        messageElement.innerHTML = '<span class="thinking">Thinking...</span>';
+        messagesContainer.appendChild(messageElement);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let isFirstChunk = true;
+        let currentContent = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          
+          const chunk = decoder.decode(value);
+          
+          if (isFirstChunk) {
+            messageElement.innerHTML = '';
+            isFirstChunk = false;
+          }
+          
+          currentContent += chunk;
+          
+          // Split content into parts and process each part
+          let formattedContent = '';
+          let currentPosition = 0;
+          
+          // Find all table blocks
+          const pattern = /(\|[^\n]+\|\n\|[\s-:|]+\|\n(?:\|[^\n]+\|\n?)+)/g;
+          let match;
+          
+          while ((match = pattern.exec(currentContent)) !== null) {
+            // Add text before the table with formatting
+            let textBeforeTable = currentContent.slice(currentPosition, match.index);
+            textBeforeTable = processFormatting(textBeforeTable);
+            formattedContent += textBeforeTable;
+            
+            // Process and add the table
+            const tableHtml = processTable(match[1]);
+            formattedContent += tableHtml;
+            
+            currentPosition = match.index + match[1].length;
+          }
+          
+          // Add remaining text after the last table with formatting
+          let remainingText = currentContent.slice(currentPosition);
+          remainingText = processFormatting(remainingText);
+          formattedContent += remainingText;
+          
+          messageElement.innerHTML = formattedContent;
+          messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+      } catch (error) {
+        if (error.name === 'AbortError') {
+          console.log('Request was cancelled');
+        } else {
+          console.error('Error:', error);
+        }
+      } finally {
+        currentController = null;
+        stopButton.style.display = 'none';
+        sendButton.disabled = false;
+      }
+    }
+
+    function processTable(tableBlock) {
+      const lines = tableBlock.trim().split('\n');
+      if (lines.length < 3) return tableBlock; // Not a valid table
+
+      // Process headers
+      const headers = lines[0]
+        .split('|')
+        .map(cell => cell.trim())
+        .filter(cell => cell.length > 0);
+
+      // Skip separator line (line[1])
+
+      // Process rows
+      const rows = lines.slice(2).map(line => 
+        line.split('|')
+          .map(cell => cell.trim())
+          .filter(cell => cell.length > 0)
+      );
+
+      // Build table HTML
+      let tableHtml = '<div class="table-container"><table>';
+      
+      // Add headers
+      tableHtml += '<thead><tr>';
+      headers.forEach(header => {
+        // Remove markdown bold syntax
+        header = header.replace(/\*\*/g, '');
+        tableHtml += `<th>${header}</th>`;
+      });
+      tableHtml += '</tr></thead>';
+      
+      // Add rows
+      tableHtml += '<tbody>';
+      rows.forEach(row => {
+        tableHtml += '<tr>';
+        row.forEach(cell => {
+          // Remove markdown bold syntax
+          cell = cell.replace(/\*\*/g, '');
+          tableHtml += `<td>${cell}</td>`;
+        });
+        tableHtml += '</tr>';
+      });
+      tableHtml += '</tbody></table></div>';
+      
+      return tableHtml;
+    }
+
+    function processFormatting(text) {
+      // Process bold text
+      text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+      
+      // Process inline code (text between backticks)
+      text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
+      
+      // Process code blocks (text between triple backticks)
+      text = text.replace(/```([^`]+)```/g, '<pre><code>$1</code></pre>');
+      
+      return text;
+    }
+
+    // Stop button handler
+    stopButton.addEventListener('click', () => {
+      if (currentController) {
+        currentController.abort();
+      }
+    });
+
+    // Event listener for the send button
+    sendButton.addEventListener('click', async () => {
+      const userMessage = userInput.value.trim();
+      if (!userMessage) return;
+
+      // Display the user's message
+      addMessage('user', userMessage);
+      userInput.value = '';
+
+      // Get the bot's response (now streaming)
+      await sendMessageToBot(userMessage);
+    });
+
+    // Allow pressing Enter to send the message
+    userInput.addEventListener('keypress', (event) => {
+      if (event.key === 'Enter') {
+        sendButton.click();
+      }
+    });
+  </script>
+</body>
+</html>
